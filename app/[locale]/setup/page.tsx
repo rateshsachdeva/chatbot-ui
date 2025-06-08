@@ -90,10 +90,39 @@ export default function SetupPage() {
             setAvailableOpenRouterModels(openRouterModels)
           }
 
-          const homeWorkspaceId = await getHomeWorkspaceByUserId(
-            session.user.id
-          )
-          return router.push(`/${homeWorkspaceId}/chat`)
+let homeWorkspaceId = await getHomeWorkspaceByUserId(session.user.id)
+
+if (!homeWorkspaceId) {
+  const { data: newWorkspace, error } = await supabase
+    .from("workspaces")
+    .insert([
+      {
+        user_id: session.user.id,
+        name: "Default Workspace",
+        is_home: true,
+        default_context_length: 4096,
+        default_model: "gpt-4",
+        default_prompt: "You are a helpful assistant.",
+        default_temperature: 0.7,
+        description: "Auto-created workspace",
+        embeddings_provider: "openai",
+        include_profile_context: true,
+        include_workspace_instructions: true,
+        instructions: "Please follow the instructions provided."
+      }
+    ])
+    .select()
+    .maybeSingle()
+
+  if (error || !newWorkspace) {
+    console.error("Failed to create default workspace:", error)
+    return
+  }
+
+  homeWorkspaceId = newWorkspace.id
+}
+
+return router.push(`/${homeWorkspaceId}/chat`)
         }
       }
     })()
