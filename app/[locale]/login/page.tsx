@@ -42,11 +42,11 @@ export default async function Login({
       .eq("is_home", true)
       .maybeSingle()
 
-    if (!homeWorkspace) {
-      return redirect("/setup") // fallback if no home workspace
+    if (homeWorkspace) {
+      return redirect(`/${homeWorkspace.id}/chat`)
     }
 
-    return redirect(`/${homeWorkspace.id}/chat`)
+    return redirect("/404")
   }
 
   const signIn = async (formData: FormData) => {
@@ -73,11 +73,11 @@ export default async function Login({
       .eq("is_home", true)
       .maybeSingle()
 
-    if (!homeWorkspace) {
-      return redirect("/setup") // fallback if no home workspace
+    if (homeWorkspace) {
+      return redirect(`/${homeWorkspace.id}/chat`)
     }
 
-    return redirect(`/${homeWorkspace.id}/chat`)
+    return redirect("/404")
   }
 
   const getEnvVarOrEdgeConfigValue = async (name: string) => {
@@ -120,20 +120,93 @@ export default async function Login({
     const cookieStore = cookies()
     const supabase = createClient(cookieStore)
 
-    const { error } = await supabase.auth.signUp({
+    // Step 1: Sign up user
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
-      password,
-      options: {
-        // emailRedirectTo: `${origin}/auth/callback`
-      }
+      password
     })
 
-    if (error) {
-      console.error(error)
-      return redirect(`/login?message=${error.message}`)
+    if (signUpError || !signUpData?.user) {
+      console.error(signUpError)
+      return redirect(`/login?message=${signUpError?.message || "Signup failed"}`)
     }
 
-    return redirect("/setup")
+    const user = signUpData.user
+
+    // Step 2: Insert profile
+    const { error: profileInsertError } = await supabase
+      .from("profiles")
+      .insert([
+        {
+          user_id: user.id,
+          username: `user_${user.id.slice(0, 8)}`,
+          display_name: "New User",
+          bio: "This is a default bio.",
+          image_url: "https://ui-avatars.com/api/?name=New+User",
+          image_path: "/avatars/default.png",
+          profile_context: "Default profile context.",
+          use_azure_openai: false,
+          has_onboarded: true
+        }
+      ])
+
+    if (profileInsertError) {
+      console.error("Profile creation failed:", profileInsertError)
+      return redirect(`/login?message=Profile setup failed.`)
+    }
+
+    // Step 3: Create workspace if not exists
+    const { data: existingWorkspace } = await supabase
+      .from("workspaces")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("is_home", true)
+      .maybeSingle()
+
+    let workspaceId = existingWorkspace?.id
+
+    if (!workspaceId) {
+      const { data: newWorkspace, error: insertError } = await supabase
+        .from("workspaces")
+        .insert([
+          {
+            user_id: user.id,
+            name: "Default Workspace",
+            is_home: true,
+            default_context_length: 4096,
+            default_model: "gpt-4",
+            default_prompt: "You are a helpful assistant.",
+            default_temperature: 0.7,
+            description: "Auto-created workspace",
+            embeddings_provider: "openai",
+            include_profile_context: true,
+            include_workspace_instructions: true,
+            instructions: "Please follow the instructions provided."
+          }
+        ])
+        .select()
+        .maybeSingle()
+
+      if (insertError || !newWorkspace) {
+        console.error("Workspace creation failed:", insertError)
+        return redirect(`/login?message=Workspace setup failed.`)
+      }
+
+      workspaceId = newWorkspace.id
+    }
+
+    // Step 4: Auto-login
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
+
+    if (loginError) {
+      console.error("Auto-login failed:", loginError)
+      return redirect(`/login?message=Login failed after signup`)
+    }
+
+    return redirect(`/${workspaceId}/chat`)
   }
 
   const handleResetPassword = async (formData: FormData) => {
