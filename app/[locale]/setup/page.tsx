@@ -34,9 +34,7 @@ export default function SetupPage() {
   } = useContext(ChatbotUIContext)
 
   const router = useRouter()
-
   const [loading, setLoading] = useState(true)
-
   const [currentStep, setCurrentStep] = useState(1)
 
   // Profile Step
@@ -66,65 +64,69 @@ export default function SetupPage() {
       const session = (await supabase.auth.getSession()).data.session
 
       if (!session) {
+        setLoading(false)
         return router.push("/login")
-      } else {
-        const user = session.user
-
-        const profile = await getProfileByUserId(user.id)
-        setProfile(profile)
-        setUsername(profile.username)
-
-        if (!profile.has_onboarded) {
-          setLoading(false)
-        } else {
-          const data = await fetchHostedModels(profile)
-
-          if (!data) return
-
-          setEnvKeyMap(data.envKeyMap)
-          setAvailableHostedModels(data.hostedModels)
-
-          if (profile["openrouter_api_key"] || data.envKeyMap["openrouter"]) {
-            const openRouterModels = await fetchOpenRouterModels()
-            if (!openRouterModels) return
-            setAvailableOpenRouterModels(openRouterModels)
-          }
-
-let homeWorkspaceId = await getHomeWorkspaceByUserId(session.user.id)
-
-if (!homeWorkspaceId) {
-  const { data: newWorkspace, error } = await supabase
-    .from("workspaces")
-    .insert([
-      {
-        user_id: session.user.id,
-        name: "Default Workspace",
-        is_home: true,
-        default_context_length: 4096,
-        default_model: "gpt-4",
-        default_prompt: "You are a helpful assistant.",
-        default_temperature: 0.7,
-        description: "Auto-created workspace",
-        embeddings_provider: "openai",
-        include_profile_context: true,
-        include_workspace_instructions: true,
-        instructions: "Please follow the instructions provided."
       }
-    ])
-    .select()
-    .maybeSingle()
 
-  if (error || !newWorkspace) {
-    console.error("Failed to create default workspace:", error)
-    return
-  }
+      const user = session.user
+      const profile = await getProfileByUserId(user.id)
+      setProfile(profile)
+      setUsername(profile.username)
 
-  homeWorkspaceId = newWorkspace.id
-}
+      if (!profile.has_onboarded) {
+        setLoading(false)
+        return
+      }
 
-return router.push(`/${homeWorkspaceId}/chat`)
+      const data = await fetchHostedModels(profile)
+      if (!data) return setLoading(false)
+
+      setEnvKeyMap(data.envKeyMap)
+      setAvailableHostedModels(data.hostedModels)
+
+      if (profile["openrouter_api_key"] || data.envKeyMap["openrouter"]) {
+        const openRouterModels = await fetchOpenRouterModels()
+        if (openRouterModels) {
+          setAvailableOpenRouterModels(openRouterModels)
         }
       }
+
+      let homeWorkspaceId = await getHomeWorkspaceByUserId(user.id)
+
+      // Create workspace if none exists
+      if (!homeWorkspaceId) {
+        const { data: newWorkspace, error } = await supabase
+          .from("workspaces")
+          .insert([
+            {
+              user_id: user.id,
+              name: "Default Workspace",
+              is_home: true,
+              default_context_length: 4096,
+              default_model: "gpt-4",
+              default_prompt: "You are a helpful assistant.",
+              default_temperature: 0.7,
+              description: "Auto-created workspace",
+              embeddings_provider: "openai",
+              include_profile_context: true,
+              include_workspace_instructions: true,
+              instructions: "Please follow the instructions provided."
+            }
+          ])
+          .select()
+          .maybeSingle()
+
+        if (error || !newWorkspace) {
+          console.error("Workspace creation failed:", error)
+          setLoading(false)
+          return
+        }
+
+        homeWorkspaceId = newWorkspace.id
+      }
+
+      setLoading(false)
+      return router.push(`/${homeWorkspaceId}/chat`)
     })()
   }, [])
 
@@ -177,7 +179,6 @@ return router.push(`/${homeWorkspaceId}/chat`)
     const workspaces = await getWorkspacesByUserId(profile.user_id)
     const homeWorkspace = workspaces.find(w => w.is_home)
 
-    // There will always be a home workspace
     setSelectedWorkspace(homeWorkspace!)
     setWorkspaces(workspaces)
 
@@ -186,7 +187,6 @@ return router.push(`/${homeWorkspaceId}/chat`)
 
   const renderStep = (stepNum: number) => {
     switch (stepNum) {
-      // Profile Step
       case 1:
         return (
           <StepContainer
@@ -208,7 +208,6 @@ return router.push(`/${homeWorkspaceId}/chat`)
           </StepContainer>
         )
 
-      // API Step
       case 2:
         return (
           <StepContainer
@@ -254,7 +253,6 @@ return router.push(`/${homeWorkspaceId}/chat`)
           </StepContainer>
         )
 
-      // Finish Step
       case 3:
         return (
           <StepContainer
@@ -268,13 +266,14 @@ return router.push(`/${homeWorkspaceId}/chat`)
             <FinishStep displayName={displayName} />
           </StepContainer>
         )
+
       default:
         return null
     }
   }
 
   if (loading) {
-    return null
+    return <div className="text-center mt-10">Loading...</div>
   }
 
   return (
