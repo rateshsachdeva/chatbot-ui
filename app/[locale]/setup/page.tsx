@@ -59,76 +59,92 @@ export default function SetupPage() {
   const [perplexityAPIKey, setPerplexityAPIKey] = useState("")
   const [openrouterAPIKey, setOpenrouterAPIKey] = useState("")
 
-  useEffect(() => {
-    ;(async () => {
-      const session = (await supabase.auth.getSession()).data.session
+useEffect(() => {
+  ;(async () => {
+    const sessionResp = await supabase.auth.getSession()
+    const session = sessionResp.data.session
 
-      if (!session) {
-        setLoading(false)
-        return router.push("/login")
+    console.log("Session:", session)
+
+    if (!session) {
+      setLoading(false)
+      router.push("/login")
+      return
+    }
+
+    const user = session.user
+
+    const profile = await getProfileByUserId(user.id)
+    console.log("Profile:", profile)
+
+    setProfile(profile)
+    setUsername(profile.username)
+
+    if (!profile.has_onboarded) {
+      setLoading(false)
+      return
+    }
+
+    const data = await fetchHostedModels(profile)
+    console.log("Hosted model response:", data)
+
+    if (!data) {
+      setLoading(false)
+      return
+    }
+
+    setEnvKeyMap(data.envKeyMap)
+    setAvailableHostedModels(data.hostedModels)
+
+    if (profile["openrouter_api_key"] || data.envKeyMap["openrouter"]) {
+      const openRouterModels = await fetchOpenRouterModels()
+      console.log("OpenRouter models:", openRouterModels)
+
+      if (openRouterModels) {
+        setAvailableOpenRouterModels(openRouterModels)
       }
+    }
 
-      const user = session.user
-      const profile = await getProfileByUserId(user.id)
-      setProfile(profile)
-      setUsername(profile.username)
+    let homeWorkspaceId = await getHomeWorkspaceByUserId(user.id)
+    console.log("Home workspace ID:", homeWorkspaceId)
 
-      if (!profile.has_onboarded) {
+    if (!homeWorkspaceId) {
+      const { data: newWorkspace, error } = await supabase
+        .from("workspaces")
+        .insert([
+          {
+            user_id: user.id,
+            name: "Default Workspace",
+            is_home: true,
+            default_context_length: 4096,
+            default_model: "gpt-4",
+            default_prompt: "You are a helpful assistant.",
+            default_temperature: 0.7,
+            description: "Auto-created workspace",
+            embeddings_provider: "openai",
+            include_profile_context: true,
+            include_workspace_instructions: true,
+            instructions: "Please follow the instructions provided."
+          }
+        ])
+        .select()
+        .maybeSingle()
+
+      if (error || !newWorkspace) {
+        console.error("Workspace creation failed:", error)
         setLoading(false)
         return
       }
 
-      const data = await fetchHostedModels(profile)
-      if (!data) return setLoading(false)
+      homeWorkspaceId = newWorkspace.id
+      console.log("Created new workspace:", newWorkspace)
+    }
 
-      setEnvKeyMap(data.envKeyMap)
-      setAvailableHostedModels(data.hostedModels)
+    setLoading(false)
+    router.push(`/${homeWorkspaceId}/chat`)
+  })()
+}, [])
 
-      if (profile["openrouter_api_key"] || data.envKeyMap["openrouter"]) {
-        const openRouterModels = await fetchOpenRouterModels()
-        if (openRouterModels) {
-          setAvailableOpenRouterModels(openRouterModels)
-        }
-      }
-
-      let homeWorkspaceId = await getHomeWorkspaceByUserId(user.id)
-
-      // Create workspace if none exists
-      if (!homeWorkspaceId) {
-        const { data: newWorkspace, error } = await supabase
-          .from("workspaces")
-          .insert([
-            {
-              user_id: user.id,
-              name: "Default Workspace",
-              is_home: true,
-              default_context_length: 4096,
-              default_model: "gpt-4",
-              default_prompt: "You are a helpful assistant.",
-              default_temperature: 0.7,
-              description: "Auto-created workspace",
-              embeddings_provider: "openai",
-              include_profile_context: true,
-              include_workspace_instructions: true,
-              instructions: "Please follow the instructions provided."
-            }
-          ])
-          .select()
-          .maybeSingle()
-
-        if (error || !newWorkspace) {
-          console.error("Workspace creation failed:", error)
-          setLoading(false)
-          return
-        }
-
-        homeWorkspaceId = newWorkspace.id
-      }
-
-      setLoading(false)
-      return router.push(`/${homeWorkspaceId}/chat`)
-    })()
-  }, [])
 
   const handleShouldProceed = (proceed: boolean) => {
     if (proceed) {
