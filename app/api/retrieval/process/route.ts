@@ -108,9 +108,11 @@ export async function POST(req: Request) {
         defaultHeaders: { "api-key": profile.azure_openai_api_key }
       })
     } else {
+      // FIX: Use the Organization ID from environment variables as a fallback
       openai = new OpenAI({
         apiKey: profile.openai_api_key || "",
-        organization: profile.openai_organization_id
+        organization:
+          profile.openai_organization_id || process.env.OPENAI_ORGANIZATION_ID
       })
     }
 
