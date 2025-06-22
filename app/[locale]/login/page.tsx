@@ -46,7 +46,9 @@ export default async function Login({
       return redirect(`/${homeWorkspace.id}/chat`)
     }
 
-    return redirect("/404")
+    // If a session exists but no home workspace, redirect to a setup or 404 page
+    // This could indicate an incomplete profile creation from a previous error
+    return redirect("/setup") // Or "/404" if you prefer
   }
 
   const signIn = async (formData: FormData) => {
@@ -77,7 +79,7 @@ export default async function Login({
       return redirect(`/${homeWorkspace.id}/chat`)
     }
 
-    return redirect("/404")
+    return redirect("/setup") // Redirect to setup if no home workspace
   }
 
   const getEnvVarOrEdgeConfigValue = async (name: string) => {
@@ -123,18 +125,44 @@ export default async function Login({
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
       {
         email,
-        password
+        password,
+        options: {
+          // Add a default username to the user's metadata upon signup
+          data: {
+            user_name: email.split("@")[0]
+          }
+        }
       }
     )
 
     if (signUpError || !signUpData?.user) {
-      console.error(signUpError)
+      console.error("Supabase sign-up error:", signUpError)
       return redirect(
         `/login?message=${signUpError?.message || "Signup failed"}`
       )
     }
 
     const user = signUpData.user
+
+    // ================== NEW PROFILE CREATION STEP ==================
+    // After a successful signup, immediately create a corresponding profile.
+    const { error: profileError } = await supabase.from("profiles").insert([
+      {
+        user_id: user.id,
+        // The username is taken from the metadata we added during signup.
+        // All other required columns in your 'profiles' table will use their default values.
+        username: user.user_metadata.user_name
+      }
+    ])
+
+    if (profileError) {
+      console.error("Profile creation failed:", profileError)
+      // It's a good practice to delete the auth user if profile creation fails
+      // to avoid orphaned users.
+      await supabase.auth.admin.deleteUser(user.id)
+      return redirect(`/login?message=Profile setup failed.`)
+    }
+    // =============================================================
 
     const { data: existingWorkspace } = await supabase
       .from("workspaces")
@@ -151,21 +179,23 @@ export default async function Login({
         .insert([
           {
             user_id: user.id,
-            name: "Default Workspace",
+            name: "Home",
             is_home: true,
-            default_context_length: 4096,
-            default_model: "gpt-4",
-            default_prompt: "You are a helpful assistant.",
-            default_temperature: 0.7,
-            description: "Auto-created workspace",
-            embeddings_provider: "openai",
+            default_model:
+              (await getEnvVarOrEdgeConfigValue("DEFAULT_MODEL")) || "gpt-4-o",
+            default_prompt:
+              (await getEnvVarOrEdgeConfigValue("DEFAULT_PROMPT")) ||
+              "You are a friendly, helpful AI assistant.",
+            default_temperature:
+              (await get<number>("DEFAULT_TEMPERATURE")) || 0.5,
+            description: "Home workspace",
             include_profile_context: true,
             include_workspace_instructions: true,
-            instructions: "Please follow the instructions provided."
+            instructions: ""
           }
         ])
         .select()
-        .maybeSingle()
+        .single()
 
       if (insertError || !newWorkspace) {
         console.error("Workspace creation failed:", insertError)
@@ -175,17 +205,9 @@ export default async function Login({
       workspaceId = newWorkspace.id
     }
 
-    const { error: loginError } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
-
-    if (loginError) {
-      console.error("Auto-login failed:", loginError)
-      return redirect(`/login?message=Login failed after signup`)
-    }
-
-    return redirect(`/${workspaceId}/chat`)
+    // Since we're not auto-logging in, we redirect to a success message.
+    // Supabase will send a confirmation email.
+    return redirect("/login?message=Success! Check your email to confirm.")
   }
 
   const handleResetPassword = async (formData: FormData) => {
