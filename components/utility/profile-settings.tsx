@@ -1,3 +1,5 @@
+"use client"
+
 import { ChatbotUIContext } from "@/context/context"
 import {
   PROFILE_CONTEXT_MAX,
@@ -7,7 +9,6 @@ import {
 } from "@/db/limits"
 import { updateProfile } from "@/db/profile"
 import { uploadProfileImage } from "@/db/storage/profile-images"
-import { exportLocalStorageAsJSON } from "@/lib/export-old-data"
 import { fetchOpenRouterModels } from "@/lib/models/fetch-models"
 import { LLM_LIST_MAP } from "@/lib/models/llm/llm-list"
 import { supabase } from "@/lib/supabase/browser-client"
@@ -16,7 +17,6 @@ import { OpenRouterLLM } from "@/types"
 import {
   IconCircleCheckFilled,
   IconCircleXFilled,
-  IconFileDownload,
   IconLoader2,
   IconLogout,
   IconUser
@@ -43,9 +43,9 @@ import { TextareaAutosize } from "../ui/textarea-autosize"
 import { WithTooltip } from "../ui/with-tooltip"
 import { ThemeSwitcher } from "./theme-switcher"
 
-// ================== NEW IMPORT ==================
+// ================== REMOVED exportLocalStorageAsJSON ==================
+// It's no longer needed since we removed the download button
 import { useProfile } from "./profile-provider"
-// ===============================================
 
 interface ProfileSettingsProps {}
 
@@ -59,18 +59,12 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
     availableOpenRouterModels
   } = useContext(ChatbotUIContext)
 
-  // ================== NEW ROLE CHECK ==================
-  // Use the hook to get the full profile, which includes the role
   const { profile: fullProfile } = useProfile()
   const isAdmin = fullProfile?.role === "admin"
-  // ====================================================
 
   const router = useRouter()
-
   const buttonRef = useRef<HTMLButtonElement>(null)
-
   const [isOpen, setIsOpen] = useState(false)
-
   const [displayName, setDisplayName] = useState(profile?.display_name || "")
   const [username, setUsername] = useState(profile?.username || "")
   const [usernameAvailable, setUsernameAvailable] = useState(true)
@@ -82,7 +76,6 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
   const [profileInstructions, setProfileInstructions] = useState(
     profile?.profile_context || ""
   )
-
   const [useAzureOpenai, setUseAzureOpenai] = useState(
     profile?.use_azure_openai
   )
@@ -123,7 +116,6 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
   const [perplexityAPIKey, setPerplexityAPIKey] = useState(
     profile?.perplexity_api_key || ""
   )
-
   const [openrouterAPIKey, setOpenrouterAPIKey] = useState(
     profile?.openrouter_api_key || ""
   )
@@ -171,7 +163,6 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
     })
 
     setProfile(updatedProfile)
-
     toast.success("Profile updated!")
 
     const providers = [
@@ -344,9 +335,6 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
           </SheetHeader>
 
           <Tabs defaultValue="profile">
-            {/* ================== DYNAMIC TABS LIST ================== */}
-            {/* The grid columns will now adjust based on whether the user is an admin,
-                so the "Profile" tab will take up the full width for regular users. */}
             <TabsList
               className={cn(
                 "mt-4 grid w-full",
@@ -354,10 +342,8 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
               )}
             >
               <TabsTrigger value="profile">Profile</TabsTrigger>
-              {/* This entire "API Keys" tab trigger is now only rendered for admins */}
               {isAdmin && <TabsTrigger value="keys">API Keys</TabsTrigger>}
             </TabsList>
-            {/* ======================================================= */}
 
             <TabsContent className="mt-4 space-y-4" value="profile">
               <div className="space-y-1">
@@ -452,8 +438,6 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
               </div>
             </TabsContent>
 
-            {/* ================== CONDITIONAL TABS CONTENT ================== */}
-            {/* The entire "API Keys" content section is now only rendered for admins */}
             {isAdmin && (
               <TabsContent className="mt-4 space-y-4" value="keys">
                 <div className="mt-5 space-y-2">
@@ -755,28 +739,12 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
                 </div>
               </TabsContent>
             )}
-            {/* ========================================================== */}
           </Tabs>
         </div>
 
         <div className="mt-6 flex items-center">
           <div className="flex items-center space-x-1">
             <ThemeSwitcher />
-
-            <WithTooltip
-              display={
-                <div>
-                  Download Chatbot UI 1.0 data as JSON. Import coming soon!
-                </div>
-              }
-              trigger={
-                <IconFileDownload
-                  className="cursor-pointer hover:opacity-50"
-                  size={32}
-                  onClick={exportLocalStorageAsJSON}
-                />
-              }
-            />
           </div>
 
           <div className="ml-auto space-x-2">
