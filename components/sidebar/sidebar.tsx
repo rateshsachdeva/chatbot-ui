@@ -8,6 +8,11 @@ import { WorkspaceSwitcher } from "../utility/workspace-switcher"
 import { WorkspaceSettings } from "../workspace/workspace-settings"
 import { SidebarContent } from "./sidebar-content"
 
+// ================== NEW IMPORT ==================
+// Import the admin link component we created
+import { AdminDashboardLink } from "./AdminDashboardLink"
+// ===============================================
+
 interface SidebarProps {
   contentType: ContentType
   showSidebar: boolean
@@ -63,6 +68,11 @@ export const Sidebar: FC<SidebarProps> = ({ contentType, showSidebar }) => {
       <div className="flex h-full flex-col p-3">
         <div className="flex items-center border-b-2 pb-2">
           <WorkspaceSwitcher />
+
+          {/* ================== ADD ADMIN LINK HERE ================== */}
+          {/* This component will only render if the user is an admin */}
+          <AdminDashboardLink />
+          {/* ========================================================= */}
 
           <WorkspaceSettings />
         </div>
