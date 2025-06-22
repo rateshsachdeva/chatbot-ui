@@ -17,27 +17,22 @@ export async function POST(request: Request) {
   try {
     const profile = await getServerProfile()
 
-    // ================== NEW ROLE-BASED LOGIC ==================
-
     let apiKey = ""
     const organizationId =
       profile.openai_organization_id || process.env.OPENAI_ORGANIZATION_ID
 
-    // Check the user's role to determine which API key to use
     if (profile.role === "admin") {
-      // Admins use their personal key from their profile
       checkApiKey(profile.openai_api_key, "OpenAI")
       apiKey = profile.openai_api_key!
     } else {
-      // Regular users use the system-wide key
-      checkApiKey(process.env.SYSTEM_OPENAI_API_KEY, "System OpenAI")
+      // FIX: Use the nullish coalescing operator (??) to provide `null` if the environment variable is undefined.
+      // This satisfies TypeScript's type checker.
+      checkApiKey(process.env.SYSTEM_OPENAI_API_KEY ?? null, "System OpenAI")
       apiKey = process.env.SYSTEM_OPENAI_API_KEY!
     }
 
-    // ==========================================================
-
     const openai = new OpenAI({
-      apiKey: apiKey, // Use the determined API key
+      apiKey: apiKey,
       organization: organizationId
     })
 
