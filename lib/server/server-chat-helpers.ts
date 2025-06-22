@@ -1,4 +1,4 @@
-import { Database, Tables } from "@/supabase/types"
+import { Database, Tables, TablesInsert } from "@/supabase/types"
 import { VALID_ENV_KEYS } from "@/types/valid-keys"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
@@ -22,18 +22,42 @@ export async function getServerProfile() {
     throw new Error("User not found")
   }
 
+  // Use .maybeSingle() to prevent an error if no profile is found yet
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
     .eq("user_id", user.id)
-    .single()
+    .maybeSingle()
 
+  // ================== NEW DEFENSIVE LOGIC ==================
+  // If no profile exists, create one on the fly.
   if (!profile) {
-    throw new Error("Profile not found")
+    // Create a new profile object
+    const newProfile: TablesInsert<"profiles"> = {
+      user_id: user.id,
+      username: user.email?.split("@")[0] || ""
+      // All other required columns will use their default values from the database
+    }
+
+    // Insert the new profile into the database
+    const { data: createdProfile, error: insertError } = await supabase
+      .from("profiles")
+      .insert(newProfile)
+      .select("*")
+      .single()
+
+    if (insertError) {
+      throw new Error(
+        `Failed to create profile for new user: ${insertError.message}`
+      )
+    }
+
+    const profileWithKeys = addApiKeysToProfile(createdProfile)
+    return profileWithKeys
   }
+  // ========================================================
 
   const profileWithKeys = addApiKeysToProfile(profile)
-
   return profileWithKeys
 }
 
