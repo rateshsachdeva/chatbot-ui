@@ -7,10 +7,11 @@ import { TabsContent } from "../ui/tabs"
 import { WorkspaceSwitcher } from "../utility/workspace-switcher"
 import { WorkspaceSettings } from "../workspace/workspace-settings"
 import { SidebarContent } from "./sidebar-content"
+import { AdminDashboardLink } from "./AdminDashboardLink"
 
 // ================== NEW IMPORT ==================
-// Import the admin link component we created
-import { AdminDashboardLink } from "./AdminDashboardLink"
+// Import our custom hook to get the user's profile and role
+import { useProfile } from "../utility/profile-provider"
 // ===============================================
 
 interface SidebarProps {
@@ -30,6 +31,12 @@ export const Sidebar: FC<SidebarProps> = ({ contentType, showSidebar }) => {
     tools,
     models
   } = useContext(ChatbotUIContext)
+
+  // ================== NEW ROLE CHECK ==================
+  // Get the user's profile and determine if they are an admin
+  const { profile } = useProfile()
+  const isAdmin = profile?.role === "admin"
+  // ====================================================
 
   const chatFolders = folders.filter(folder => folder.type === "chats")
   const presetFolders = folders.filter(folder => folder.type === "presets")
@@ -69,12 +76,12 @@ export const Sidebar: FC<SidebarProps> = ({ contentType, showSidebar }) => {
         <div className="flex items-center border-b-2 pb-2">
           <WorkspaceSwitcher />
 
-          {/* ================== ADD ADMIN LINK HERE ================== */}
-          {/* This component will only render if the user is an admin */}
           <AdminDashboardLink />
-          {/* ========================================================= */}
 
-          <WorkspaceSettings />
+          {/* ================== CONDITIONAL RENDERING ================== */}
+          {/* The WorkspaceSettings component is now only rendered if the user is an admin */}
+          {isAdmin && <WorkspaceSettings />}
+          {/* ========================================================= */}
         </div>
 
         {(() => {
