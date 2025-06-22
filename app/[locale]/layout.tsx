@@ -9,6 +9,12 @@ import { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import { cookies } from "next/headers"
 import { ReactNode } from "react"
+
+// ================== NEW IMPORT ==================
+// Import the ProfileProvider we created earlier
+import { ProfileProvider } from "@/components/utility/profile-provider"
+// ===============================================
+
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -84,23 +90,43 @@ export default async function RootLayout({
   )
   const session = (await supabase.auth.getSession()).data.session
 
+  // ================== NEW CODE BLOCK ==================
+  // This block fetches the user's profile from your 'profiles' table
+  // if they are logged in.
+  let profile = null
+  if (session) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("user_id", session.user.id) // Using user_id to match your schema
+      .single()
+    profile = data
+  }
+  // ======================================================
+
   const { t, resources } = await initTranslations(locale, i18nNamespaces)
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <Providers attribute="class" defaultTheme="dark">
-          <TranslationsProvider
-            namespaces={i18nNamespaces}
-            locale={locale}
-            resources={resources}
-          >
-            <Toaster richColors position="top-center" duration={3000} />
-            <div className="bg-background text-foreground flex h-dvh flex-col items-center overflow-x-auto">
-              {session ? <GlobalState>{children}</GlobalState> : children}
-            </div>
-          </TranslationsProvider>
-        </Providers>
+        {/* ================== WRAP WITH PROFILE PROVIDER ================== */}
+        {/* We wrap your existing Providers with our new ProfileProvider,
+            passing the fetched profile data to it. */}
+        <ProfileProvider profile={profile}>
+          <Providers attribute="class" defaultTheme="dark">
+            <TranslationsProvider
+              namespaces={i18nNamespaces}
+              locale={locale}
+              resources={resources}
+            >
+              <Toaster richColors position="top-center" duration={3000} />
+              <div className="bg-background text-foreground flex h-dvh flex-col items-center overflow-x-auto">
+                {session ? <GlobalState>{children}</GlobalState> : children}
+              </div>
+            </TranslationsProvider>
+          </Providers>
+        </ProfileProvider>
+        {/* ================================================================ */}
       </body>
     </html>
   )
