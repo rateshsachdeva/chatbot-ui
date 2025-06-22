@@ -13,6 +13,20 @@ import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
 import OpenAI from "openai"
 
+// ================== NEW VERCEL CONFIG ==================
+// This config object tells Vercel to increase the allowed body size for this specific API route.
+// This is only available on Pro plans. We'll set it to 10mb.
+// We also increase the maxDuration to allow for longer processing times.
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "10mb"
+    }
+  }
+}
+export const maxDuration = 300
+// =======================================================
+
 export async function POST(req: Request) {
   try {
     const supabaseAdmin = createClient<Database>(
@@ -43,7 +57,8 @@ export async function POST(req: Request) {
       throw new Error("File not found")
     }
 
-    if (fileMetadata.user_id !== profile.user_id) {
+    // Admins can access any file, regular users can only access their own
+    if (profile.role !== "admin" && fileMetadata.user_id !== profile.user_id) {
       throw new Error("Unauthorized")
     }
 
@@ -99,22 +114,20 @@ export async function POST(req: Request) {
 
     let embeddings: any = []
 
-    let openai
-    if (profile.use_azure_openai) {
-      openai = new OpenAI({
-        apiKey: profile.azure_openai_api_key || "",
-        baseURL: `${profile.azure_openai_endpoint}/openai/deployments/${profile.azure_openai_embeddings_id}`,
-        defaultQuery: { "api-version": "2023-12-01-preview" },
-        defaultHeaders: { "api-key": profile.azure_openai_api_key }
-      })
+    let apiKey = ""
+    const organizationId =
+      profile.openai_organization_id || process.env.OPENAI_ORGANIZATION_ID
+
+    if (profile.role === "admin") {
+      apiKey = profile.openai_api_key!
     } else {
-      // FIX: Use the Organization ID from environment variables as a fallback
-      openai = new OpenAI({
-        apiKey: profile.openai_api_key || "",
-        organization:
-          profile.openai_organization_id || process.env.OPENAI_ORGANIZATION_ID
-      })
+      apiKey = process.env.SYSTEM_OPENAI_API_KEY!
     }
+
+    const openai = new OpenAI({
+      apiKey: apiKey,
+      organization: organizationId
+    })
 
     if (embeddingsProvider === "openai") {
       const response = await openai.embeddings.create({
