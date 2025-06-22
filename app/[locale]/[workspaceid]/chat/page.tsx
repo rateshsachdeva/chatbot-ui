@@ -5,12 +5,20 @@ import { useChatHandler } from "@/components/chat/chat-hooks/use-chat-handler"
 import { ChatInput } from "@/components/chat/chat-input"
 import { ChatSettings } from "@/components/chat/chat-settings"
 import { ChatUI } from "@/components/chat/chat-ui"
-import { QuickSettings } from "@/components/chat/quick-settings"
+// ================== REMOVED IMPORT ==================
+// QuickSettings is no longer used, so we remove its import.
+// import { QuickSettings } from "@/components/chat/quick-settings"
+// ====================================================
 import { Brand } from "@/components/ui/brand"
 import { ChatbotUIContext } from "@/context/context"
 import useHotkey from "@/lib/hooks/use-hotkey"
 import { useTheme } from "next-themes"
 import { useContext } from "react"
+
+// ================== NEW IMPORT ==================
+// Import our custom hook to get the user's profile and role
+import { useProfile } from "@/components/utility/profile-provider"
+// ===============================================
 
 export default function ChatPage() {
   useHotkey("o", () => handleNewChat())
@@ -19,6 +27,11 @@ export default function ChatPage() {
   })
 
   const { chatMessages } = useContext(ChatbotUIContext)
+
+  // ================== NEW ROLE CHECK ==================
+  const { profile } = useProfile()
+  const isAdmin = profile?.role === "admin"
+  // ====================================================
 
   const { handleNewChat, handleFocusChatInput } = useChatHandler()
 
@@ -32,13 +45,18 @@ export default function ChatPage() {
             <Brand theme={theme === "dark" ? "dark" : "light"} />
           </div>
 
-          <div className="absolute left-2 top-2">
-            <QuickSettings />
-          </div>
+          {/* ================== COMPONENT REMOVED ================== */}
+          {/* The div containing QuickSettings has been deleted. */}
+          {/* ======================================================= */}
 
-          <div className="absolute right-2 top-2">
-            <ChatSettings />
-          </div>
+          {/* ================== CONDITIONAL RENDERING ================== */}
+          {/* This ChatSettings component will now only appear if the user is an admin. */}
+          {isAdmin && (
+            <div className="absolute right-2 top-2">
+              <ChatSettings />
+            </div>
+          )}
+          {/* ========================================================= */}
 
           <div className="flex grow flex-col items-center justify-center" />
 
