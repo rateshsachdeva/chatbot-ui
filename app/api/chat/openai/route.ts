@@ -17,11 +17,28 @@ export async function POST(request: Request) {
   try {
     const profile = await getServerProfile()
 
-    checkApiKey(profile.openai_api_key, "OpenAI")
+    // ================== NEW ROLE-BASED LOGIC ==================
+
+    let apiKey = ""
+    const organizationId =
+      profile.openai_organization_id || process.env.OPENAI_ORGANIZATION_ID
+
+    // Check the user's role to determine which API key to use
+    if (profile.role === "admin") {
+      // Admins use their personal key from their profile
+      checkApiKey(profile.openai_api_key, "OpenAI")
+      apiKey = profile.openai_api_key!
+    } else {
+      // Regular users use the system-wide key
+      checkApiKey(process.env.SYSTEM_OPENAI_API_KEY, "System OpenAI")
+      apiKey = process.env.SYSTEM_OPENAI_API_KEY!
+    }
+
+    // ==========================================================
 
     const openai = new OpenAI({
-      apiKey: profile.openai_api_key || "",
-      organization: profile.openai_organization_id
+      apiKey: apiKey, // Use the determined API key
+      organization: organizationId
     })
 
     const response = await openai.chat.completions.create({
