@@ -90,3 +90,40 @@ export const deleteWorkspace = async (workspaceId: string) => {
 
   return true
 }
+
+// ================== NEW FUNCTION ==================
+// This function fetches all workspaces created by any user with the 'admin' role.
+export const getWorkspacesByAdmin = async () => {
+  // First, find all admin user IDs from the profiles table
+  const { data: adminProfiles, error: profileError } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("role", "admin")
+
+  if (profileError) {
+    console.error("Error fetching admin profiles:", profileError.message)
+    return [] // Return an empty array on error
+  }
+
+  if (!adminProfiles || adminProfiles.length === 0) {
+    console.log("No admin users found.")
+    return [] // Return an empty array if no admins exist
+  }
+
+  const adminUserIds = adminProfiles.map(p => p.user_id)
+
+  // Then, fetch all workspaces where the user_id is one of the admin IDs
+  const { data: workspaces, error: workspaceError } = await supabase
+    .from("workspaces")
+    .select("*")
+    .in("user_id", adminUserIds)
+    .order("created_at", { ascending: false })
+
+  if (workspaceError) {
+    console.error("Error fetching workspaces by admin:", workspaceError.message)
+    return [] // Return an empty array on error
+  }
+
+  return workspaces || []
+}
+// =================================================
