@@ -13,19 +13,11 @@ import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
 import OpenAI from "openai"
 
-// ================== NEW VERCEL CONFIG ==================
-// This config object tells Vercel to increase the allowed body size for this specific API route.
-// This is only available on Pro plans. We'll set it to 10mb.
-// We also increase the maxDuration to allow for longer processing times.
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: "10mb"
-    }
-  }
-}
+// ================== VERCEL CONFIG UPDATED ==================
+// The deprecated `config` object has been removed to fix the build error.
+// The `maxDuration` is a valid modern configuration and remains.
 export const maxDuration = 300
-// =======================================================
+// ==========================================================
 
 export async function POST(req: Request) {
   try {
