@@ -17,6 +17,11 @@ import { FC, useContext, useEffect, useState } from "react"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
 
+// ================== NEW IMPORT ==================
+// Import our custom hook to get the user's profile and role
+import { useProfile } from "./profile-provider"
+// ===============================================
+
 interface WorkspaceSwitcherProps {}
 
 export const WorkspaceSwitcher: FC<WorkspaceSwitcherProps> = ({}) => {
@@ -29,6 +34,12 @@ export const WorkspaceSwitcher: FC<WorkspaceSwitcherProps> = ({}) => {
     setSelectedWorkspace,
     setWorkspaces
   } = useContext(ChatbotUIContext)
+
+  // ================== NEW ROLE CHECK ==================
+  // Get the user's profile and determine if they are an admin
+  const { profile } = useProfile()
+  const isAdmin = profile?.role === "admin"
+  // ====================================================
 
   const { handleNewChat } = useChatHandler()
 
@@ -104,7 +115,7 @@ export const WorkspaceSwitcher: FC<WorkspaceSwitcherProps> = ({}) => {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         className="border-input flex h-[36px]
-        w-full cursor-pointer items-center justify-between rounded-md border px-2 py-1 hover:opacity-50"
+       w-full cursor-pointer items-center justify-between rounded-md border px-2 py-1 hover:opacity-50"
       >
         <div className="flex items-center truncate">
           {selectedWorkspace && (
@@ -132,14 +143,19 @@ export const WorkspaceSwitcher: FC<WorkspaceSwitcherProps> = ({}) => {
 
       <PopoverContent className="p-2">
         <div className="space-y-2">
-          <Button
-            className="flex w-full items-center space-x-2"
-            size="sm"
-            onClick={handleCreateWorkspace}
-          >
-            <IconPlus />
-            <div className="ml-2">New Workspace</div>
-          </Button>
+          {/* ================== CONDITIONAL RENDERING ================== */}
+          {/* This button is now only rendered if the user is an admin */}
+          {isAdmin && (
+            <Button
+              className="flex w-full items-center space-x-2"
+              size="sm"
+              onClick={handleCreateWorkspace}
+            >
+              <IconPlus />
+              <div className="ml-2">New Workspace</div>
+            </Button>
+          )}
+          {/* ========================================================= */}
 
           <Input
             placeholder="Search workspaces..."
