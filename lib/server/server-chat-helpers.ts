@@ -29,14 +29,14 @@ export async function getServerProfile() {
     .eq("user_id", user.id)
     .maybeSingle()
 
-  // ================== NEW DEFENSIVE LOGIC ==================
   // If no profile exists, create one on the fly.
   if (!profile) {
-    // Create a new profile object
+    // This insert will only provide the user_id.
+    // The `username` column, which we previously set to allow NULLs,
+    // will be left empty. All other required columns will use their
+    // default values from the database.
     const newProfile: TablesInsert<"profiles"> = {
-      user_id: user.id,
-      username: user.email?.split("@")[0] || ""
-      // All other required columns will use their default values from the database
+      user_id: user.id
     }
 
     // Insert the new profile into the database
@@ -52,10 +52,10 @@ export async function getServerProfile() {
       )
     }
 
+    // Continue with the newly created profile
     const profileWithKeys = addApiKeysToProfile(createdProfile)
     return profileWithKeys
   }
-  // ========================================================
 
   const profileWithKeys = addApiKeysToProfile(profile)
   return profileWithKeys
