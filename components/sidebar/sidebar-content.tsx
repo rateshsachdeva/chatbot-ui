@@ -4,11 +4,7 @@ import { FC, useState } from "react"
 import { SidebarCreateButtons } from "./sidebar-create-buttons"
 import { SidebarDataList } from "./sidebar-data-list"
 import { SidebarSearch } from "./sidebar-search"
-
-// ================== NEW IMPORT ==================
-// Import our custom hook to get the user's profile and role
 import { useProfile } from "../utility/profile-provider"
-// ===============================================
 
 interface SidebarContentProps {
   contentType: ContentType
@@ -23,22 +19,19 @@ export const SidebarContent: FC<SidebarContentProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState("")
 
-  // ================== NEW ROLE CHECK ==================
-  // Get the user's profile and determine if they are an admin
   const { profile } = useProfile()
   const isAdmin = profile?.role === "admin"
-  // ====================================================
 
   const filteredData: any = data.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
-    // Subtract 50px for the height of the workspace settings
     <div className="flex max-h-[calc(100%-50px)] grow flex-col">
-      {/* ================== CONDITIONAL RENDERING ================== */}
-      {/* The entire "Create Buttons" div is now only rendered if the user is an admin. */}
-      {isAdmin && (
+      {/* ================== CORRECTED CONDITIONAL RENDERING ================== */}
+      {/* The create button is now visible if the user is an admin OR
+          if the content type is 'chats' or 'files'. */}
+      {(isAdmin || contentType === "chats" || contentType === "files") && (
         <div className="mt-2 flex items-center">
           <SidebarCreateButtons
             contentType={contentType}
@@ -46,7 +39,7 @@ export const SidebarContent: FC<SidebarContentProps> = ({
           />
         </div>
       )}
-      {/* ========================================================= */}
+      {/* =================================================================== */}
 
       <div className="mt-2">
         <SidebarSearch
