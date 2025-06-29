@@ -3,6 +3,7 @@
 import { ChatbotUISVG } from "@/components/icons/chatbotui-svg"
 import { IconArrowRight } from "@tabler/icons-react"
 import { useTheme } from "next-themes"
+import { Button } from "@/components/ui/button";
 import Link from "next/link"
 import { ThemeSwitcher } from "@/components/utility/theme-switcher"
 
@@ -21,11 +22,12 @@ export default function HomePage() {
 
       <div className="mt-2 text-4xl font-bold">Veritas Due Diligence</div>
 
-      <Link
-        className="mt-4 flex w-[200px] items-center justify-center rounded-md bg-blue-500 p-2 font-semibold"
-        href="/login"
-      >
-        Start Chatting
+        <Button asChild className="mt-4 w-[200px]">
+           <Link href="/login" prefetch={false}>
+             Start&nbsp;Chatting&nbsp;→
+           </Link>
+        </Button>
+        
         <IconArrowRight className="ml-1" size={20} />
       </Link>
     </div>
