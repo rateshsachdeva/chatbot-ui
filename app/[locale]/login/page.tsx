@@ -12,12 +12,17 @@ import { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import dynamic from "next/dynamic";
-import { Brand } from "@/components/ui/brand";
+
 
 /* ──────────────────────────────────────────────────────────
    THEME SWITCHER — client-side only
    ────────────────────────────────────────────────────────── */
- const ThemeSwitcher = dynamic(
+const Brand = dynamic(
+  () => import("@/components/ui/brand").then((m) => m.Brand),
+  { ssr: false }
+);
+
+const ThemeSwitcher = dynamic(
    () => import("@/components/utility/theme-switcher").then((m) => m.ThemeSwitcher),
    { ssr: false }
  );
