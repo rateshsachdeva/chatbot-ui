@@ -9,6 +9,7 @@ import { get } from "@vercel/edge-config"
 import { Metadata } from "next"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
+import { ThemeSwitcher } from "@/components/utility/theme-switcher"
 
 export const metadata: Metadata = {
   title: "Login"
@@ -230,11 +231,12 @@ export default async function Login({
   }
 
   return (
-    <div className="flex w-full flex-1 flex-col justify-center gap-2 px-8 sm:max-w-md">
-      <form
-        className="animate-in text-foreground flex w-full flex-1 flex-col justify-center gap-2"
-        action={signIn}
-      >
+   <div className="relative flex w-full flex-1 flex-col justify-center gap-2 px-8 sm:max-w-md">
+ 
+     {/* floating light / dark toggle */}
+     <div className="fixed bottom-4 left-4 z-20">
+       <ThemeSwitcher />
+     </div>
         <Brand />
 
         <Label className="text-md mt-4" htmlFor="email">
