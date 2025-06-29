@@ -24,11 +24,12 @@ export default function HomePage() {
 
         <Button asChild className="mt-4 w-[200px]">
            <Link href="/login" prefetch={false}>
-             Start&nbsp;Chatting&nbsp;→
+             Start&nbsp;Chatting&nbsp;
+             <IconArrowRight className="ml-1" size={20} />
            </Link>
         </Button>
         
-        <IconArrowRight className="ml-1" size={20} />
+        
       </Link>
     </div>
   )
