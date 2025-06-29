@@ -43,7 +43,7 @@ export default function ChatPage() {
       <div className="relative flex h-full flex-col items-center justify-between">
         {/* This div now uses padding-top to create space from the header.
             You can change pt-20 to a larger or smaller number to get the exact spacing you want. */}
-        <div className="pt-12 text-center">
+        <div className="pt-20 text-center">
           <Brand theme={theme === "dark" ? "dark" : "light"} />
         </div>
 
