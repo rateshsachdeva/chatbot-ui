@@ -9,6 +9,7 @@ import { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import { cookies } from "next/headers"
 import { ReactNode } from "react"
+import { TopNav } from "@/components/layout/top-nav"
 
 // ================== NEW IMPORT ==================
 // Import the ProfileProvider we created earlier
@@ -109,6 +110,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
+        <TopNav />
         {/* ================== WRAP WITH PROFILE PROVIDER ================== */}
         {/* We wrap your existing Providers with our new ProfileProvider,
             passing the fetched profile data to it. */}
