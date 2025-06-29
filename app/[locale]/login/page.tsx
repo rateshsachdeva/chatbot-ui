@@ -12,6 +12,7 @@ import { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import dynamic from "next/dynamic";
+import { Brand } from "@/components/ui/brand";
 
 /* ──────────────────────────────────────────────────────────
    THEME SWITCHER — client-side only
