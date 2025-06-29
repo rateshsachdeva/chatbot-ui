@@ -40,10 +40,12 @@ export default function ChatPage() {
   return (
     <>
       {chatMessages.length === 0 ? (
-        <div className="relative flex h-full flex-col items-center justify-center">
-          <div className="top-50% left-50% -translate-x-50% -translate-y-50% absolute mb-20">
-            <Brand theme={theme === "dark" ? "dark" : "light"} />
-          </div>
+      <div className="relative flex h-full flex-col items-center justify-between">
+        {/* This div now uses padding-top to create space from the header.
+            You can change pt-20 to a larger or smaller number to get the exact spacing you want. */}
+        <div className="pt-12 text-center">
+          <Brand theme={theme === "dark" ? "dark" : "light"} />
+        </div>
 
           {/* ================== COMPONENT REMOVED ================== */}
           {/* The div containing QuickSettings has been deleted. */}
