@@ -23,10 +23,10 @@ export default function HomePage() {
       <div className="mt-2 text-4xl font-bold">Veritas Due Diligence</div>
 
         <Button asChild className="mt-4 w-[200px]">
-           <Link href="/login" prefetch={false}>
-             Start&nbsp;Chatting&nbsp;
-             <IconArrowRight className="ml-1" size={20} />
-           </Link>
+          <Link href="/login" prefetch={false} className="flex items-center">
+            Start&nbsp;Chatting
+            <IconArrowRight className="ml-1" size={20} />
+          </Link>
         </Button>
         
         
