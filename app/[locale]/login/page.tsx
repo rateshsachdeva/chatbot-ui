@@ -1,6 +1,6 @@
 /* app/[locale]/login/page.tsx
    --------------------------------------------------------------- */
-import { Brand } from "@/components/ui/brand";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -16,13 +16,16 @@ import dynamic from "next/dynamic";
 /* ──────────────────────────────────────────────────────────
    THEME SWITCHER — client-side only
    ────────────────────────────────────────────────────────── */
-const ThemeSwitcher = dynamic(
-  () =>
-    import("@/components/utility/theme-switcher").then(
-      (m) => m.ThemeSwitcher
-    ),
-  { ssr: false }
-);
+ const ThemeSwitcher = dynamic(
+   () => import("@/components/utility/theme-switcher").then((m) => m.ThemeSwitcher),
+   { ssr: false }
+ );
+ 
+ /* Brand renders ChatbotUISVG (uses useTheme), so make it client-only too */
+ const Brand = dynamic(
+   () => import("@/components/ui/brand").then((m) => m.Brand),
+   { ssr: false }
+ );
 
 /* ──────────────────────────────────────────────────────────
    PAGE METADATA
