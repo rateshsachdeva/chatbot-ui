@@ -19,9 +19,9 @@ import { ProfileProvider } from "@/components/utility/profile-provider"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
-const APP_NAME = "Chatbot UI"
-const APP_DEFAULT_TITLE = "Chatbot UI"
-const APP_TITLE_TEMPLATE = "%s - Chatbot UI"
+const APP_NAME = "VeriTAS"
+const APP_DEFAULT_TITLE = "VeriTAS"
+const APP_TITLE_TEMPLATE = "%s - VeriTAS"
 const APP_DESCRIPTION = "Chabot UI PWA!"
 
 interface RootLayoutProps {
