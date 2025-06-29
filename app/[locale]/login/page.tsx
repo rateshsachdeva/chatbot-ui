@@ -22,10 +22,7 @@ import { Brand } from "@/components/ui/brand";
    { ssr: false }
  );
  
- /* Brand renders ChatbotUISVG (uses useTheme), so make it client-only too */
- const Brand = dynamic(
-   () => import("@/components/ui/brand").then((m) => m.Brand),
-   { ssr: false }
+
  );
 
 /* ──────────────────────────────────────────────────────────
