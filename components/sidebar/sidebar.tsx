@@ -8,7 +8,6 @@ import { WorkspaceSwitcher } from "../utility/workspace-switcher"
 import { WorkspaceSettings } from "../workspace/workspace-settings"
 import { SidebarContent } from "./sidebar-content"
 
-
 // ================== NEW IMPORT ==================
 // Import our custom hook to get the user's profile and role
 import { useProfile } from "../utility/profile-provider"
@@ -75,8 +74,6 @@ export const Sidebar: FC<SidebarProps> = ({ contentType, showSidebar }) => {
       <div className="flex h-full flex-col p-3">
         <div className="flex items-center border-b-2 pb-2">
           <WorkspaceSwitcher />
-
-         
 
           {/* ================== CONDITIONAL RENDERING ================== */}
           {/* The WorkspaceSettings component is now only rendered if the user is an admin */}

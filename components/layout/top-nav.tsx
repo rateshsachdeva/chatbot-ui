@@ -1,26 +1,26 @@
 /* components/layout/top-nav.tsx
    --------------------------------------------------------------- */
-'use client';
+"use client"
 
-import Link from 'next/link';
-import { useTheme } from 'next-themes';
-import { motion } from 'framer-motion';
+import Link from "next/link"
+import { useTheme } from "next-themes"
+import { motion } from "framer-motion"
 
-import { ChatbotUISVG } from '@/components/icons/chatbotui-svg';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { ChatbotUISVG } from "@/components/icons/chatbotui-svg"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 /* --- helper: URLs come from env --- */
-const url = (env: string) => process.env[env] ?? '#';
+const url = (env: string) => process.env[env] ?? "#"
 
 const navLinks = [
-  { env: 'NEXT_PUBLIC_LEARN_URL',    label: 'Learn' },
-  { env: 'NEXT_PUBLIC_ANALYSIS_URL', label: 'Analysis' },
-  { env: 'NEXT_PUBLIC_NEWS_URL',     label: 'M&A News' },
-];
+  { env: "NEXT_PUBLIC_LEARN_URL", label: "Learn" },
+  { env: "NEXT_PUBLIC_ANALYSIS_URL", label: "Analysis" },
+  { env: "NEXT_PUBLIC_NEWS_URL", label: "M&A News" }
+]
 
-export function TopNav({ className = '' }: { className?: string }) {
-  const { resolvedTheme } = useTheme(); // swap light/dark logo
+export function TopNav({ className = "" }: { className?: string }) {
+  const { resolvedTheme } = useTheme() // swap light/dark logo
 
   return (
     <motion.nav
@@ -28,8 +28,8 @@ export function TopNav({ className = '' }: { className?: string }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       className={cn(
-        'sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-background/70',
-        'border-b border-border/30',
+        "supports-[backdrop-filter]:bg-background/70 sticky top-0 z-30 backdrop-blur",
+        "border-border/30 border-b",
         className
       )}
     >
@@ -37,8 +37,8 @@ export function TopNav({ className = '' }: { className?: string }) {
         {/* ------------ Brand: Logo + Wordmark ------------ */}
         <Link href="/" prefetch={false} className="flex items-center gap-2">
           <ChatbotUISVG
-            theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
-            scale={0.25}            /* ~48 px wide */
+            theme={resolvedTheme === "dark" ? "dark" : "light"}
+            scale={0.25} /* ~48 px wide */
           />
           {/* hide word-mark on very small screens */}
           <span className="hidden text-base font-semibold tracking-tight sm:inline">
@@ -63,7 +63,7 @@ export function TopNav({ className = '' }: { className?: string }) {
           {/* Pricing – uses brand primary colour */}
           <li>
             <Button asChild size="sm" className="font-semibold">
-              <Link href={url('NEXT_PUBLIC_PRICING_URL')} prefetch={false}>
+              <Link href={url("NEXT_PUBLIC_PRICING_URL")} prefetch={false}>
                 Pricing
               </Link>
             </Button>
@@ -71,5 +71,5 @@ export function TopNav({ className = '' }: { className?: string }) {
         </ul>
       </div>
     </motion.nav>
-  );
+  )
 }

@@ -528,9 +528,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
                             </Label>
                           ) : (
                             <>
-                              <Label>
-                                Azure GPT-3.5 Turbo Deployment Name
-                              </Label>
+                              <Label>Azure GPT-3.5 Turbo Deployment Name</Label>
 
                               <Input
                                 placeholder="Azure GPT-3.5 Turbo Deployment Name"
@@ -552,9 +550,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
                             </Label>
                           ) : (
                             <>
-                              <Label>
-                                Azure GPT-4.5 Turbo Deployment Name
-                              </Label>
+                              <Label>Azure GPT-4.5 Turbo Deployment Name</Label>
 
                               <Input
                                 placeholder="Azure GPT-4.5 Turbo Deployment Name"
@@ -572,8 +568,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
                         <div className="space-y-1">
                           {envKeyMap["azure_gpt_45_vision_name"] ? (
                             <Label className="text-xs">
-                              Azure GPT-4.5 Vision deployment name set by
-                              admin.
+                              Azure GPT-4.5 Vision deployment name set by admin.
                             </Label>
                           ) : (
                             <>
