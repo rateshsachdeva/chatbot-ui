@@ -1,5 +1,3 @@
-/* components/layout/top-nav.tsx
-   --------------------------------------------------------------- */
 "use client";
 
 import Link from "next/link";
@@ -13,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-/* helper – URLs from env */
+/* URLs pulled from env so you can change them without code */
 const url = (env: string) => process.env[env] ?? "#";
 
 const navLinks = [
@@ -27,7 +25,7 @@ export function TopNav({ className = "" }: { className?: string }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  /* ---- desktop nav list ---- */
+  /* ---------- Desktop inline links ---------- */
   const DesktopLinks = () => (
     <ul className="hidden items-center gap-6 text-sm font-medium sm:flex">
       {navLinks.map(({ env, label }) => (
@@ -51,7 +49,7 @@ export function TopNav({ className = "" }: { className?: string }) {
     </ul>
   );
 
-  /* ---- mobile sheet nav ---- */
+  /* ---------- Mobile full-width sheet ---------- */
   const MobileSheet = () => (
     <Sheet>
       <SheetTrigger asChild>
@@ -64,20 +62,25 @@ export function TopNav({ className = "" }: { className?: string }) {
           <Menu className="size-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-64 space-y-6">
-        <div className="mt-4 flex flex-col gap-4">
+
+      {/* side='top' + w-full h-full ⇒ covers whole viewport */}
+      <SheetContent
+        side="top"
+        className="h-full w-full space-y-8 pt-20 text-center sm:hidden"
+      >
+        <div className="flex flex-col items-center gap-6">
           {navLinks.map(({ env, label }) => (
             <Link
               key={env}
               href={url(env)}
               prefetch={false}
-              className="text-base font-medium"
+              className="text-lg font-medium"
             >
               {label}
             </Link>
           ))}
 
-          <Button asChild>
+          <Button asChild className="w-40">
             <Link href={url("NEXT_PUBLIC_PRICING_URL")} prefetch={false}>
               Pricing
             </Link>
@@ -99,12 +102,12 @@ export function TopNav({ className = "" }: { className?: string }) {
       )}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5">
-        {/* Logo + wordmark */}
+        {/* Logo + word-mark */}
         <Link href="/" prefetch={false} className="flex items-center gap-2">
           {mounted && (
             <ChatbotUISVG
               theme={resolvedTheme === "dark" ? "dark" : "light"}
-              scale={0.45}
+              scale={0.45}          /* bigger logo */
             />
           )}
           <span className="hidden text-lg font-semibold tracking-tight sm:inline">
@@ -112,7 +115,7 @@ export function TopNav({ className = "" }: { className?: string }) {
           </span>
         </Link>
 
-        {/* Desktop or Mobile controls */}
+        {/* Nav controls */}
         <DesktopLinks />
         <MobileSheet />
       </div>
