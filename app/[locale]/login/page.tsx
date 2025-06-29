@@ -9,10 +9,21 @@ import { get } from "@vercel/edge-config"
 import { Metadata } from "next"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
+import dynamic from "next/dynamic
+
+// Light / Dark toggle – browser only
+const ThemeSwitcher = dynamic(
+  () =>
+    import("@/components/utility/theme-switcher").then(
+      (m) => m.ThemeSwitcher
+    ),
+  { ssr: false }          // keeps it out of the server bundle
+);
 
 export const metadata: Metadata = {
   title: "Login"
 }
+
 
 export default async function Login({
   searchParams
@@ -230,6 +241,10 @@ export default async function Login({
   }
 
   return (
+
+    <div className="fixed bottom-4 left-4 z-20">
+      <ThemeSwitcher />
+    </div>
     <div className="flex w-full flex-1 flex-col justify-center gap-2 px-8 sm:max-w-md">
       <form
         className="animate-in text-foreground flex w-full flex-1 flex-col justify-center gap-2"
