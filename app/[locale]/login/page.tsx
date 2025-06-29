@@ -11,6 +11,16 @@ import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { ThemeSwitcher } from "@/components/utility/theme-switcher"
 
+/* ---- Theme switcher (client-only) ----------------------------- */
+const ThemeSwitcher = dynamic(
+  () =>
+    import("@/components/utility/theme-switcher").then(
+      (m) => m.ThemeSwitcher
+    ),
+  { ssr: false }
+);
+
+
 export const metadata: Metadata = {
   title: "Login"
 }
@@ -230,14 +240,14 @@ export default async function Login({
     return redirect("/login?message=Check email to reset password")
   }
 
-  return (
-      <>
-      {/* Theme switcher fixed bottom-left */}
+   return (
+    <>
+      {/* floating Light / Dark toggle */}
       <div className="fixed bottom-4 left-4 z-20">
         <ThemeSwitcher />
       </div>
 
-      {/* Login form wrapper */}
+      {/* login form wrapper */}
       <div className="relative flex w-full flex-1 flex-col justify-center gap-2 px-8 sm:max-w-md">
         <form
           className="animate-in text-foreground flex w-full flex-1 flex-col justify-center gap-2"
