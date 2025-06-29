@@ -21,9 +21,7 @@ import { Brand } from "@/components/ui/brand";
    () => import("@/components/utility/theme-switcher").then((m) => m.ThemeSwitcher),
    { ssr: false }
  );
- 
 
- );
 
 /* ──────────────────────────────────────────────────────────
    PAGE METADATA
