@@ -1,4 +1,4 @@
-itas"use client"
+"use client"
 
 import Link from "next/link"
 import { FC } from "react"
