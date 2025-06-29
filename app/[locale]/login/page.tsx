@@ -9,7 +9,7 @@ import { get } from "@vercel/edge-config"
 import { Metadata } from "next"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
-import dynamic from "next/dynamic
+import dynamic from "next/dynamic"
 
 // Light / Dark toggle – browser only
 const ThemeSwitcher = dynamic(
