@@ -13,22 +13,25 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import dynamic from "next/dynamic";
 
-/* ------------------------------------------------------------------
-   THEME TOGGLE  —  client-only to avoid server runtime errors
-   ---------------------------------------------------------------- */
+/* ──────────────────────────────────────────────────────────
+   THEME SWITCHER — client-side only
+   ────────────────────────────────────────────────────────── */
 const ThemeSwitcher = dynamic(
-  () => import("@/components/utility/theme-switcher").then((m) => m.ThemeSwitcher),
+  () =>
+    import("@/components/utility/theme-switcher").then(
+      (m) => m.ThemeSwitcher
+    ),
   { ssr: false }
 );
 
-/* ------------------------------------------------------------------
+/* ──────────────────────────────────────────────────────────
    PAGE METADATA
-   ---------------------------------------------------------------- */
+   ────────────────────────────────────────────────────────── */
 export const metadata: Metadata = { title: "Login" };
 
-/* ------------------------------------------------------------------
+/* ──────────────────────────────────────────────────────────
    PAGE COMPONENT
-   ---------------------------------------------------------------- */
+   ────────────────────────────────────────────────────────── */
 export default async function Login({
   searchParams,
 }: {
@@ -55,27 +58,32 @@ export default async function Login({
       .eq("is_home", true)
       .maybeSingle();
 
-    if (homeWorkspace) return redirect(`/${homeWorkspace.id}/chat`);
+    if (homeWorkspace) {
+      return redirect(`/${homeWorkspace.id}/chat`);
+    }
     return redirect("/setup");
   }
 
-  /* ----------------------------------------------------------------
-     SERVER HELPERS  (unchanged from your original file)
-     ---------------------------------------------------------------- */
+  /* ────────────────────────────────────────────────────────
+     HELPER: get ENV or Edge-Config value
+     ──────────────────────────────────────────────────────── */
   const getEnvVarOrEdgeConfigValue = async (name: string) => {
     "use server";
-    if (process.env.EDGE_CONFIG) return await get<string>(name);
+    if (process.env.EDGE_CONFIG) {
+      return await get<string>(name);
+    }
     return process.env[name];
   };
 
-  /* ----------------------------------------------------------------
-     ACTION: SIGN-IN
-     ---------------------------------------------------------------- */
+  /* ────────────────────────────────────────────────────────
+     ACTION: SIGN IN
+     ──────────────────────────────────────────────────────── */
   const signIn = async (formData: FormData) => {
     "use server";
 
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
+
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
 
@@ -84,7 +92,9 @@ export default async function Login({
       password,
     });
 
-    if (error) return redirect(`/login?message=${error.message}`);
+    if (error) {
+      return redirect(`/login?message=${error.message}`);
+    }
 
     const { data: homeWorkspace } = await supabase
       .from("workspaces")
@@ -93,20 +103,24 @@ export default async function Login({
       .eq("is_home", true)
       .maybeSingle();
 
-    if (homeWorkspace) return redirect(`/${homeWorkspace.id}/chat`);
+    if (homeWorkspace) {
+      return redirect(`/${homeWorkspace.id}/chat`);
+    }
+
     return redirect("/setup");
   };
 
-  /* ----------------------------------------------------------------
-     ACTION: SIGN-UP  (unchanged)
-     ---------------------------------------------------------------- */
+  /* ────────────────────────────────────────────────────────
+     ACTION: SIGN UP   (email / domain whitelist, profile row,
+     default workspace creation — identical to your original)
+     ──────────────────────────────────────────────────────── */
   const signUp = async (formData: FormData) => {
     "use server";
 
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    /* --- whitelist logic --- */
+    /* ----- whitelist check ----- */
     const emailDomainWhitelistPatternsString = await getEnvVarOrEdgeConfigValue(
       "EMAIL_DOMAIN_WHITELIST"
     );
@@ -123,27 +137,38 @@ export default async function Login({
     if (emailDomainWhitelist.length > 0 || emailWhitelist.length > 0) {
       const domainMatch = emailDomainWhitelist.includes(email.split("@")[1]);
       const emailMatch = emailWhitelist.includes(email);
-      if (!domainMatch && !emailMatch)
-        return redirect(`/login?message=Email ${email} is not allowed to sign up.`);
+      if (!domainMatch && !emailMatch) {
+        return redirect(
+          `/login?message=Email ${email} is not allowed to sign up.`
+        );
+      }
     }
 
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
 
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { user_name: email.split("@")[0] },
-      },
-    });
+    /* ----- create auth user ----- */
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
+      {
+        email,
+        password,
+        options: {
+          data: {
+            user_name: email.split("@")[0],
+          },
+        },
+      }
+    );
 
-    if (signUpError || !signUpData?.user)
-      return redirect(`/login?message=${signUpError?.message || "Signup failed"}`);
+    if (signUpError || !signUpData?.user) {
+      return redirect(
+        `/login?message=${signUpError?.message || "Signup failed"}`
+      );
+    }
 
     const user = signUpData.user;
 
-    /* --- create profile row --- */
+    /* ----- create profile row ----- */
     const { error: profileError } = await supabase.from("profiles").insert([
       {
         user_id: user.id,
@@ -156,7 +181,7 @@ export default async function Login({
       return redirect(`/login?message=Profile setup failed.`);
     }
 
-    /* --- ensure home workspace --- */
+    /* ----- ensure a home workspace exists ----- */
     const { data: existingWorkspace } = await supabase
       .from("workspaces")
       .select("*")
@@ -179,7 +204,8 @@ export default async function Login({
             default_prompt:
               (await getEnvVarOrEdgeConfigValue("DEFAULT_PROMPT")) ||
               "You are a friendly, helpful AI assistant.",
-            default_temperature: (await get<number>("DEFAULT_TEMPERATURE")) || 0.5,
+            default_temperature:
+              (await get<number>("DEFAULT_TEMPERATURE")) || 0.5,
             description: "Home workspace",
             include_profile_context: true,
             include_workspace_instructions: true,
@@ -189,23 +215,25 @@ export default async function Login({
         .select()
         .single();
 
-      if (insertError || !newWorkspace)
+      if (insertError || !newWorkspace) {
         return redirect(`/login?message=Workspace setup failed.`);
-
+      }
       workspaceId = newWorkspace.id;
     }
 
+    /* Supabase will send confirmation email */
     return redirect("/login?message=Success! Check your email to confirm.");
   };
 
-  /* ----------------------------------------------------------------
-     ACTION: RESET PASSWORD  (unchanged)
-     ---------------------------------------------------------------- */
+  /* ────────────────────────────────────────────────────────
+     ACTION: RESET PASSWORD
+     ──────────────────────────────────────────────────────── */
   const handleResetPassword = async (formData: FormData) => {
     "use server";
 
     const origin = headers().get("origin");
     const email = formData.get("email") as string;
+
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
 
@@ -213,21 +241,24 @@ export default async function Login({
       redirectTo: `${origin}/auth/callback?next=/login/password`,
     });
 
-    if (error) return redirect(`/login?message=${error.message}`);
+    if (error) {
+      return redirect(`/login?message=${error.message}`);
+    }
+
     return redirect("/login?message=Check email to reset password");
   };
 
-  /* ----------------------------------------------------------------
-     RENDER
-     ---------------------------------------------------------------- */
+  /* ────────────────────────────────────────────────────────
+     JSX
+     ──────────────────────────────────────────────────────── */
   return (
     <>
-      {/* floating Light / Dark toggle */}
+      {/* Light/Dark toggle */}
       <div className="fixed bottom-4 left-4 z-20">
         <ThemeSwitcher />
       </div>
 
-      {/* Login form */}
+      {/* Login card */}
       <div className="relative flex w-full flex-1 flex-col justify-center gap-2 px-8 sm:max-w-md">
         <form
           className="animate-in text-foreground flex w-full flex-1 flex-col justify-center gap-2"
