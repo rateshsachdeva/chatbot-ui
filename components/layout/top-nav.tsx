@@ -33,12 +33,12 @@ export function TopNav({ className = "" }: { className?: string }) {
         className
       )}
     >
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-y-2 px-4 py-3">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-y-2 px-4 py-4">
         {/* ------------ Brand: Logo + Wordmark ------------ */}
         <Link href="/" prefetch={false} className="flex items-center gap-2">
           <ChatbotUISVG
             theme={resolvedTheme === "dark" ? "dark" : "light"}
-            scale={0.25} /* ~48 px wide */
+            scale={0.35} /* ~48 px wide */
           />
           {/* hide word-mark on very small screens */}
           <span className="hidden text-base font-semibold tracking-tight sm:inline">
