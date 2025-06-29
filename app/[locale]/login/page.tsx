@@ -1,49 +1,51 @@
-import { Brand } from "@/components/ui/brand"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { SubmitButton } from "@/components/ui/submit-button"
-import { createClient } from "@/lib/supabase/server"
-import { Database } from "@/supabase/types"
-import { createServerClient } from "@supabase/ssr"
-import { get } from "@vercel/edge-config"
-import { Metadata } from "next"
-import { cookies, headers } from "next/headers"
-import { redirect } from "next/navigation"
-import { ThemeSwitcher } from "@/components/utility/theme-switcher"
+/* app/[locale]/login/page.tsx
+   --------------------------------------------------------------- */
+import { Brand } from "@/components/ui/brand";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { createClient } from "@/lib/supabase/server";
+import { Database } from "@/supabase/types";
+import { createServerClient } from "@supabase/ssr";
+import { get } from "@vercel/edge-config";
+import { Metadata } from "next";
+import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
+import dynamic from "next/dynamic";
 
-/* ---- Theme switcher (client-only) ----------------------------- */
+/* ------------------------------------------------------------------
+   THEME TOGGLE  —  client-only to avoid server runtime errors
+   ---------------------------------------------------------------- */
 const ThemeSwitcher = dynamic(
-  () =>
-    import("@/components/utility/theme-switcher").then(
-      (m) => m.ThemeSwitcher
-    ),
+  () => import("@/components/utility/theme-switcher").then((m) => m.ThemeSwitcher),
   { ssr: false }
 );
 
+/* ------------------------------------------------------------------
+   PAGE METADATA
+   ---------------------------------------------------------------- */
+export const metadata: Metadata = { title: "Login" };
 
-export const metadata: Metadata = {
-  title: "Login"
-}
-
+/* ------------------------------------------------------------------
+   PAGE COMPONENT
+   ---------------------------------------------------------------- */
 export default async function Login({
-  searchParams
+  searchParams,
 }: {
-  searchParams: { message: string }
+  searchParams: { message: string };
 }) {
-  const cookieStore = cookies()
+  /* ---------- SESSION CHECK ---------- */
+  const cookieStore = cookies();
+
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        }
-      }
+      cookies: { get: (n: string) => cookieStore.get(n)?.value },
     }
-  )
+  );
 
-  const session = (await supabase.auth.getSession()).data.session
+  const session = (await supabase.auth.getSession()).data.session;
 
   if (session) {
     const { data: homeWorkspace } = await supabase
@@ -51,138 +53,118 @@ export default async function Login({
       .select("*")
       .eq("user_id", session.user.id)
       .eq("is_home", true)
-      .maybeSingle()
+      .maybeSingle();
 
-    if (homeWorkspace) {
-      return redirect(`/${homeWorkspace.id}/chat`)
-    }
-
-    // If a session exists but no home workspace, redirect to a setup or 404 page
-    // This could indicate an incomplete profile creation from a previous error
-    return redirect("/setup") // Or "/404" if you prefer
+    if (homeWorkspace) return redirect(`/${homeWorkspace.id}/chat`);
+    return redirect("/setup");
   }
 
-  const signIn = async (formData: FormData) => {
-    "use server"
+  /* ----------------------------------------------------------------
+     SERVER HELPERS  (unchanged from your original file)
+     ---------------------------------------------------------------- */
+  const getEnvVarOrEdgeConfigValue = async (name: string) => {
+    "use server";
+    if (process.env.EDGE_CONFIG) return await get<string>(name);
+    return process.env[name];
+  };
 
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
-    const cookieStore = cookies()
-    const supabase = createClient(cookieStore)
+  /* ----------------------------------------------------------------
+     ACTION: SIGN-IN
+     ---------------------------------------------------------------- */
+  const signIn = async (formData: FormData) => {
+    "use server";
+
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      password
-    })
+      password,
+    });
 
-    if (error) {
-      return redirect(`/login?message=${error.message}`)
-    }
+    if (error) return redirect(`/login?message=${error.message}`);
 
     const { data: homeWorkspace } = await supabase
       .from("workspaces")
       .select("*")
       .eq("user_id", data.user.id)
       .eq("is_home", true)
-      .maybeSingle()
+      .maybeSingle();
 
-    if (homeWorkspace) {
-      return redirect(`/${homeWorkspace.id}/chat`)
-    }
+    if (homeWorkspace) return redirect(`/${homeWorkspace.id}/chat`);
+    return redirect("/setup");
+  };
 
-    return redirect("/setup") // Redirect to setup if no home workspace
-  }
-
-  const getEnvVarOrEdgeConfigValue = async (name: string) => {
-    "use server"
-    if (process.env.EDGE_CONFIG) {
-      return await get<string>(name)
-    }
-
-    return process.env[name]
-  }
-
+  /* ----------------------------------------------------------------
+     ACTION: SIGN-UP  (unchanged)
+     ---------------------------------------------------------------- */
   const signUp = async (formData: FormData) => {
-    "use server"
+    "use server";
 
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
 
+    /* --- whitelist logic --- */
     const emailDomainWhitelistPatternsString = await getEnvVarOrEdgeConfigValue(
       "EMAIL_DOMAIN_WHITELIST"
-    )
+    );
     const emailDomainWhitelist = emailDomainWhitelistPatternsString?.trim()
       ? emailDomainWhitelistPatternsString.split(",")
-      : []
-    const emailWhitelistPatternsString =
-      await getEnvVarOrEdgeConfigValue("EMAIL_WHITELIST")
+      : [];
+    const emailWhitelistPatternsString = await getEnvVarOrEdgeConfigValue(
+      "EMAIL_WHITELIST"
+    );
     const emailWhitelist = emailWhitelistPatternsString?.trim()
       ? emailWhitelistPatternsString.split(",")
-      : []
+      : [];
 
     if (emailDomainWhitelist.length > 0 || emailWhitelist.length > 0) {
-      const domainMatch = emailDomainWhitelist.includes(email.split("@")[1])
-      const emailMatch = emailWhitelist.includes(email)
-      if (!domainMatch && !emailMatch) {
-        return redirect(
-          `/login?message=Email ${email} is not allowed to sign up.`
-        )
-      }
+      const domainMatch = emailDomainWhitelist.includes(email.split("@")[1]);
+      const emailMatch = emailWhitelist.includes(email);
+      if (!domainMatch && !emailMatch)
+        return redirect(`/login?message=Email ${email} is not allowed to sign up.`);
     }
 
-    const cookieStore = cookies()
-    const supabase = createClient(cookieStore)
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
 
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
-      {
-        email,
-        password,
-        options: {
-          // Add a default username to the user's metadata upon signup
-          data: {
-            user_name: email.split("@")[0]
-          }
-        }
-      }
-    )
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { user_name: email.split("@")[0] },
+      },
+    });
 
-    if (signUpError || !signUpData?.user) {
-      console.error("Supabase sign-up error:", signUpError)
-      return redirect(
-        `/login?message=${signUpError?.message || "Signup failed"}`
-      )
-    }
+    if (signUpError || !signUpData?.user)
+      return redirect(`/login?message=${signUpError?.message || "Signup failed"}`);
 
-    const user = signUpData.user
+    const user = signUpData.user;
 
-    // ================== NEW PROFILE CREATION STEP ==================
-    // After a successful signup, immediately create a corresponding profile.
+    /* --- create profile row --- */
     const { error: profileError } = await supabase.from("profiles").insert([
       {
         user_id: user.id,
-        // The username is taken from the metadata we added during signup.
-        // All other required columns in your 'profiles' table will use their default values.
-        username: user.user_metadata.user_name
-      }
-    ])
+        username: user.user_metadata.user_name,
+      },
+    ]);
 
     if (profileError) {
-      console.error("Profile creation failed:", profileError)
-      // It's a good practice to delete the auth user if profile creation fails
-      // to avoid orphaned users.
-      await supabase.auth.admin.deleteUser(user.id)
-      return redirect(`/login?message=Profile setup failed.`)
+      await supabase.auth.admin.deleteUser(user.id);
+      return redirect(`/login?message=Profile setup failed.`);
     }
-    // =============================================================
 
+    /* --- ensure home workspace --- */
     const { data: existingWorkspace } = await supabase
       .from("workspaces")
       .select("*")
       .eq("user_id", user.id)
       .eq("is_home", true)
-      .maybeSingle()
+      .maybeSingle();
 
-    let workspaceId = existingWorkspace?.id
+    let workspaceId = existingWorkspace?.id;
 
     if (!workspaceId) {
       const { data: newWorkspace, error: insertError } = await supabase
@@ -197,57 +179,55 @@ export default async function Login({
             default_prompt:
               (await getEnvVarOrEdgeConfigValue("DEFAULT_PROMPT")) ||
               "You are a friendly, helpful AI assistant.",
-            default_temperature:
-              (await get<number>("DEFAULT_TEMPERATURE")) || 0.5,
+            default_temperature: (await get<number>("DEFAULT_TEMPERATURE")) || 0.5,
             description: "Home workspace",
             include_profile_context: true,
             include_workspace_instructions: true,
-            instructions: ""
-          }
+            instructions: "",
+          },
         ])
         .select()
-        .single()
+        .single();
 
-      if (insertError || !newWorkspace) {
-        console.error("Workspace creation failed:", insertError)
-        return redirect(`/login?message=Workspace setup failed.`)
-      }
+      if (insertError || !newWorkspace)
+        return redirect(`/login?message=Workspace setup failed.`);
 
-      workspaceId = newWorkspace.id
+      workspaceId = newWorkspace.id;
     }
 
-    // Since we're not auto-logging in, we redirect to a success message.
-    // Supabase will send a confirmation email.
-    return redirect("/login?message=Success! Check your email to confirm.")
-  }
+    return redirect("/login?message=Success! Check your email to confirm.");
+  };
 
+  /* ----------------------------------------------------------------
+     ACTION: RESET PASSWORD  (unchanged)
+     ---------------------------------------------------------------- */
   const handleResetPassword = async (formData: FormData) => {
-    "use server"
+    "use server";
 
-    const origin = headers().get("origin")
-    const email = formData.get("email") as string
-    const cookieStore = cookies()
-    const supabase = createClient(cookieStore)
+    const origin = headers().get("origin");
+    const email = formData.get("email") as string;
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}/auth/callback?next=/login/password`
-    })
+      redirectTo: `${origin}/auth/callback?next=/login/password`,
+    });
 
-    if (error) {
-      return redirect(`/login?message=${error.message}`)
-    }
+    if (error) return redirect(`/login?message=${error.message}`);
+    return redirect("/login?message=Check email to reset password");
+  };
 
-    return redirect("/login?message=Check email to reset password")
-  }
-
-   return (
+  /* ----------------------------------------------------------------
+     RENDER
+     ---------------------------------------------------------------- */
+  return (
     <>
       {/* floating Light / Dark toggle */}
       <div className="fixed bottom-4 left-4 z-20">
         <ThemeSwitcher />
       </div>
 
-      {/* login form wrapper */}
+      {/* Login form */}
       <div className="relative flex w-full flex-1 flex-col justify-center gap-2 px-8 sm:max-w-md">
         <form
           className="animate-in text-foreground flex w-full flex-1 flex-col justify-center gap-2"
