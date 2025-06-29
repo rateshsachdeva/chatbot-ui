@@ -24,7 +24,7 @@ export default function HomePage() {
 
         <Button asChild className="mt-4 w-[200px]">
           <Link href="/login" prefetch={false} className="flex items-center">
-            Let's&nbsp;Start
+            Let&rsquo;s&nbsp;Start
             <IconArrowRight className="ml-1" size={20} />
           </Link>
         </Button>
