@@ -4,13 +4,18 @@ import { ChatbotUISVG } from "@/components/icons/chatbotui-svg"
 import { IconArrowRight } from "@tabler/icons-react"
 import { useTheme } from "next-themes"
 import Link from "next/link"
+import { ThemeSwitcher } from "@/components/utility/theme-switcher"
 
 export default function HomePage() {
   const { theme } = useTheme()
 
   return (
-    <div className="flex size-full flex-col items-center justify-center">
-      <div>
+ <div className="relative flex size-full flex-col items-center justify-center">
+  {/* floating light / dark toggle */}
+  <div className="fixed bottom-4 left-4 z-20">
+    <ThemeSwitcher />
+  </div>
+    <div>
         <ChatbotUISVG theme={theme === "dark" ? "dark" : "light"} scale={1} />
       </div>
 
